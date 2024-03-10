@@ -1,5 +1,3 @@
-// Silly little canvas drawing utilities to make code shorter and more readable
-
 class draw {
     static width = 1;
     static color = 'black';
@@ -12,16 +10,16 @@ class draw {
         ctx.arc(vector.x, vector.y, radius, 0, Math.PI*2);
     };
     static circleStroke(vector, radius) {
-        ctx.lineWidth = draw.width;
-        ctx.strokeStyle = draw.color;
+        ctx.lineWidth = this.width;
+        ctx.strokeStyle = this.color;
         ctx.beginPath();
-        draw.circle(vector, radius);
+        this.circle(vector, radius);
         ctx.stroke()
     };
     static circleFill(vector, radius) {
-        ctx.fillStyle = draw.color;
+        ctx.fillStyle = this.color;
         ctx.beginPath();
-        draw.circle(vector, radius);
+        this.circle(vector, radius);
         ctx.fill();
     };
     static line(vectorStart, vectorEnd) {
@@ -29,20 +27,20 @@ class draw {
         ctx.lineTo(vectorEnd.x, vectorEnd.y);
     };
     static lineStroke(vectorStart, vectorEnd, cap=false) {
-        ctx.lineWidth = draw.width;
-        ctx.strokeStyle = draw.color;
+        ctx.lineWidth = this.width;
+        ctx.strokeStyle = this.color;
         ctx.beginPath();
-        draw.line(vectorStart, vectorEnd);
+        this.line(vectorStart, vectorEnd);
         ctx.stroke();
         if(cap) {
-            draw.circleFill(vectorStart, draw.width/2);
-            draw.circleFill(vectorEnd, draw.width/2);
+            this.circleFill(vectorStart, this.width/2);
+            this.circleFill(vectorEnd, this.width/2);
         };
     };
-    static drawText(text, size, align, vector) {
+    static fillText(text, size, align, vector) {
         ctx.beginPath();
-        ctx.fillStyle = draw.color;
-        ctx.font = (size || 24) + 'px ' + draw.font;
+        ctx.fillStyle = this.color;
+        ctx.font = (size || 24) + 'px ' + this.font;
         ctx.textAlign = align || 'left';
         ctx.fillText(text, vector.x, vector.y);
     };

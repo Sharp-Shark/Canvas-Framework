@@ -1,26 +1,20 @@
-// Handles some of the input logic
-
 class input {
     static mouse = {pos: new Vector(), worldPos: new Vector(), down: false};
     static keyStates = {};
-    static keybinds = {
+    static keyBinds = {
         'moveUp': 'w',
         'moveDown': 's',
         'moveRight': 'd',
         'moveLeft': 'a',
-        'rotateClock': 'q', // rotate camera clockwise
-        'rotateCounter': 'e', // rotate camera counterclockwise
-        'zoomIn': 'z', // increase camera zoom level (+)
-        'zoomOut': 'x', // decrease camera zoom level (-)
-        'create': 'c', // hold to create entities continuously - to create a single entity just click
-        'delete': 'v', // delete entities at mouse cursor
-        'teleport': 't', // hold to teleport red circle to mouse
-        'control': 'space', // hold to control red circle (camera will be centered on it and you can use WASD to move it)
-        'showQuadtree': 'b', // hold to show quadtrees
-        'toggleQuadtree': 'p', // toggles between using and not using quadtrees
-        'toggleCulling': 'f', // toggles culling (doesn't render objects out of camera view)
-        '': ''
+        'rotateClock': 'z', // rotate camera clockwise
+        'rotateCounter': 'x', // rotate camera counterclockwise
+        'zoomIn': 'q', // increase camera zoom level (+)
+        'zoomOut': 'e', // decrease camera zoom level (-)
+        'help': 'h', // gets list of keybinds
+        'togglePause': 'space' // toggle pause
     };
+    static onBindDown = {};
+    static onBindUp = {};
     static updateMouse(event) {
         screenX = screen.getBoundingClientRect().left;
         screenY = screen.getBoundingClientRect().top;
@@ -31,16 +25,28 @@ class input {
         this.mouse.worldPos = this.mouse.pos.screenToWorld(cam);
     };
     static getBindState(bind) {
-        return this.isKeyDown(this.keybinds[bind]);
+        return this.isKeyDown(this.keyBinds[bind]);
     };
     static isKeyDown(key) {
         if(this.keyStates[key.toLowerCase()]) {return true;};
         return false;
     };
     static setKeyDown(key) {
+        for(let bind in this.onBindDown) {
+            if((key.toLowerCase() == this.keyBinds[bind]) && !this.getBindState(bind)) {
+                this.onBindDown[bind]();
+            };
+        };
+        if(key.toLowerCase() == 'mouse') {this.mouse.down = true};
         this.keyStates[key.toLowerCase()] = true;
     };
     static setKeyUp(key) {
+        for(let bind in this.onBindUp) {
+            if((key.toLowerCase() == this.keyBinds[bind]) && !this.getBindState(bind)) {
+                this.onBindUp[bind]();
+            };
+        };
+        if(key.toLowerCase() == 'mouse') {this.mouse.down = false};
         this.keyStates[key.toLowerCase()] = false;
     };
 };
