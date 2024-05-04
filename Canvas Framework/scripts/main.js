@@ -20,6 +20,10 @@ resizeCanvas();
 let useQuadtree = true;
 let useCulling = true;
 
+// Debugging
+let drawCollisionBlocks = false;
+let drawColliders = true;
+
 // Define entityManager
 let entityManager = new EntityManager();
 
@@ -28,7 +32,7 @@ let cam = new Camera(new Vector());
 
 // Edge
 let edge = new Vector(1_000, 1_000);
-edge = edge.scale(5);
+edge = edge.scale(15);
 let edgeWidth = 200;
 
 // Generate objects
@@ -49,9 +53,6 @@ for(let i = 0; i < 30; i++) {
 let noLoop = false;
 let windowWasOutOfFocus = false;
 
-// Debugging
-let drawCollisionBlocks = false;
-
 // Time keeping
 let paused = false;
 let previousTime = 0;
@@ -60,10 +61,11 @@ let delta = 0;
 let deltaMultiplier = 1;
 
 // remove this later
-let rect1 = new Rect(new Vector(-750, -750), new Vector(1_000, 1_000));
-let line1 = new Line(new Vector(-1, -0.25), new Vector(-0.25, -1), rect1);
-let line2 = new Line(new Vector(), new Vector());
-let circle1 = new Circle(new Vector(), 100);
+let line1 = new Line(new Vector(2000, 0), new Vector(1000, 1000));
+let circle1 = new Circle(new Vector(), 500);
+let player = new PhysEntity(new Vector(), 100);
+player.friction = 0.95;
+entityManager.initEntity(player);
 
 // Main function
 function main (time) {
@@ -95,26 +97,20 @@ function main (time) {
     };
 
     // remove this later
-    /*
-    if(input.mouse.down) {
-        rect1.pos = input.mouse.worldPos;
+    cam.target = player;
+    let playerMove = new Vector(input.getBindState('moveRight') - input.getBindState('moveLeft'), input.getBindState('moveUp') - input.getBindState('moveDown'));
+    playerMove.angle = playerMove.rotate(0 - cam.angle).angle;
+    playerMove.scaler = (1/10) * delta;
+    player.vel = player.vel.translate(playerMove);
+    draw.drawImage('barodev', player.pos.worldToScreen(cam), player.collider.size.scale(cam.zoom));
+    // remove this later
+    circle1.pos = input.mouse.worldPos;
+    circle1.render(cam, 5 * cam.zoom);
+    line1.render(cam, 5 * cam.zoom);
+    if(circle1.isColliding(line1)) {
+        let point = new Point(collision.lineCircleIntersection(line1, circle1));
+        point.render(cam, 15 * cam.zoom, '#FF00FF');
     };
-    line2.endPos = input.mouse.worldPos;
-    line1.render(cam, 10 * cam.zoom, line1.isColliding(line2) ? '#00FF00' : '#FF0000');
-    line2.render(cam, 10 * cam.zoom);
-    rect1.render(cam, 10 * cam.zoom, rect1.isColliding(line2) ? '#00FF00' : '#FF0000');
-    circle1.render(cam, 10 * cam.zoom, circle1.isColliding(rect1) ? '#00FF00' : '#FF0000');
-    draw.color = '#0000FF';
-    let intersection
-    intersection = line1.getIntersection(line2);
-    if(intersection != undefined) {
-        draw.circleFill(intersection.worldToScreen(cam), 20 * cam.zoom);
-    };
-    intersection = line2.getIntersection(rect1);
-    if(intersection != undefined) {
-        draw.circleFill(intersection.worldToScreen(cam), 20 * cam.zoom);
-    };
-    */
 
     // Edge
     draw.width = edgeWidth * cam.zoom;

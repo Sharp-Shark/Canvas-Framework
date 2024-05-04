@@ -1,4 +1,24 @@
 class collision {
+    static pointLine(point, line) {
+        // Point-line collision taken from "https://www.jeffreythompson.org/collision-detection/line-point.php"
+        let d1 = point.pos.getDistTo(line.pos);
+        let d2 = point.pos.getDistTo(line.endPos);
+        let len = line.pos.getDistTo(line.endPos);
+      
+        // since floats are so minutely accurate, add
+        // a little buffer zone that will give collision
+        let buffer = 0.1; // higher # = less accurate
+      
+        // if the two distances are equal to the line's
+        // length, the point is on the line!
+        // note we use the buffer here to give a range,
+        // rather than one #
+        if (d1 + d2 >= len - buffer && d1 + d2 <= len + buffer) {
+          return true;
+        }
+        return false;
+      }
+
     static lineLine (line1, line2) {
         // Line-line collision taken from "https://www.jeffreythompson.org/collision-detection/line-line.php"
         let x1 = line1.pos.x;
@@ -34,6 +54,15 @@ class collision {
         };
     };
 
+    static pointRect (point, rect) {
+        if(Math.abs(rect.pos.x - point.pos.x) < rect.size.x/2 &&
+        Math.abs(rect.pos.y - point.pos.y) < rect.size.y/2) {
+            return true;
+        } else {
+            return false;
+        };
+    };
+
     static lineRect (line, rect) {
         let topLeft = rect.getRelative(new Vector(-1, 1));
         let topRight = rect.getRelative(new Vector(1, 1));
@@ -44,6 +73,8 @@ class collision {
         if(collision.lineLine(line, new Line(topRight, bottomRight))) {return true};
         if(collision.lineLine(line, new Line(bottomRight, bottomLeft))) {return true};
         if(collision.lineLine(line, new Line(bottomLeft, topLeft))) {return true};
+        if(collision.pointRect(new Point(line.pos), rect)) {return true};
+        if(collision.pointRect(new Point(line.endPos), rect)) {return true};
         return false;
     };
 
@@ -80,21 +111,60 @@ class collision {
         return closestPos;
     };
 
-    static pointRect (point, rect) {
-        if(Math.abs(rect.pos.x - point.pos.x) < rect.size.x/2 &&
-        Math.abs(rect.pos.y - point.pos.y) < rect.size.y/2) {
-            return true;
-        } else {
-            return false;
-        };
-    };
-
     static rectRect (rect1, rect2) {
         if(Math.abs(rect1.pos.x - rect2.pos.x) < (rect1.size.x + rect2.size.x)/2 &&
         Math.abs(rect1.pos.y - rect2.pos.y) < (rect1.size.y + rect2.size.y)/2) {
             return true;
         } else {
             return false;
+        };
+    };
+
+    static pointCircle (point, circle) {
+        return point.pos.getDistTo(circle.pos) < circle.radius;
+    };
+
+    static lineCircle (line, circle) {
+        // Line-circle collision taken from "https://www.jeffreythompson.org/collision-detection/line-circle.php"
+        let x1 = line.pos.x;
+        let x2 = line.endPos.x;
+        let y1 = line.pos.y;
+        let y2 = line.endPos.y;
+        let cx = circle.pos.x;
+        let cy = circle.pos.y;
+        if(circle.isColliding(new Point(line.pos)) || circle.isColliding(new Point(line.endPos))) {
+            return true;
+        };
+        let len = line.pos.getDistTo(line.endPos);
+        let dot = ( ((cx-x1)*(x2-x1)) + ((cy-y1)*(y2-y1)) ) / (len ** 2);
+        let point = new Point(new Vector(x1 + (dot * (x2-x1)), y1 + (dot * (y2-y1))));
+        return line.isColliding(point) && circle.isColliding(point);
+    };
+
+    static lineCircleIntersection (line, circle) {
+        // Line-circle collision taken from "https://www.jeffreythompson.org/collision-detection/line-circle.php"
+        let x1 = line.pos.x;
+        let x2 = line.endPos.x;
+        let y1 = line.pos.y;
+        let y2 = line.endPos.y;
+        let cx = circle.pos.x;
+        let cy = circle.pos.y;
+
+        let len = line.pos.getDistTo(line.endPos);
+        let dot = ( ((cx-x1)*(x2-x1)) + ((cy-y1)*(y2-y1)) ) / (len ** 2);
+        let point = new Point(new Vector(x1 + (dot * (x2-x1)), y1 + (dot * (y2-y1))));
+        if(line.isColliding(point)) {
+            return point.pos;
+        };
+
+        let bool1 = circle.isColliding(new Point(line.pos));
+        let bool2 = circle.isColliding(new Point(line.endPos));
+        if(bool1 && bool2) {
+            return line.pos;
+        } else if(bool1 && !bool2) {
+            return line.pos;
+        } else if(bool2) {
+            return line.endPos;
         };
     };
 
@@ -123,37 +193,123 @@ class collision {
         return false;
     };
 
-    static pointCircle (point, circle) {
-        return point.pos.getDistTo(circle.pos) < circle.radius;
-    };
-
     static circleCircle (circle1, circle2) {
         return circle1.pos.getDistTo(circle2.pos) < circle1.radius + circle2.radius;
+    };
+
+    static circleCircleIntersection (circle1, circle2) {
+        return circle1.pos.translate(circle2.pos).scale(0.5);
+    };
+
+    static pointPolygon (point, polygon) {
+        // Point-polygon collision taken from "https://www.jeffreythompson.org/collision-detection/poly-point.php"
+        let bool = false;
+        let px = point.pos.x;
+        let py = point.pos.y;
+        for(let index = 0; index < polygon.vertices.length; index++) {
+            let vc = polygon.vertices[index].pos; // current vertex position
+            let vn = polygon.vertices[(index + 1) % polygon.vertices.length].pos; // next vertex position
+            if (((vc.y >= py && vn.y < py) || (vc.y < py && vn.y >= py)) &&
+            (px < (vn.x-vc.x)*(py-vc.y) / (vn.y-vc.y)+vc.x)) {
+                bool = !bool;
+            };
+        };
+        return bool;
+    };
+
+    static linePolygon (line, polygon) {
+        for(let index = 0; index < polygon.vertices.length; index++) {
+            let vc = polygon.vertices[index].pos; // current vertex position
+            let vn = polygon.vertices[(index + 1) % polygon.vertices.length].pos; // next vertex position
+            let polygonLine = new Line(vc, vn);
+            if(line.isColliding(polygonLine)) {
+                return true;
+            };
+        };
+        return false;
+    };
+
+    static rectPolygon (rect, polygon) {
+        let rectPolygon = new Polygon(new Vector(), [
+            new Point(rect.getRelative(new Vector(-1, 1))),
+            new Point(rect.getRelative(new Vector(1, 1))),
+            new Point(rect.getRelative(new Vector(1, -1))),
+            new Point(rect.getRelative(new Vector(-1, -1)))
+        ]);
+        return collision.polygonPolygon(rectPolygon, polygon);
+    };
+
+    static circlePolygon (circle, polygon) {
+        for(let index = 0; index < polygon.vertices.length; index++) {
+            let vc = polygon.vertices[index].pos; // current vertex position
+            let vn = polygon.vertices[(index + 1) % polygon.vertices.length].pos; // next vertex position
+            let polygonLine = new Line(vc, vn);
+            if(circle.isColliding(polygonLine)) {
+                return true;
+            };
+        };
+        return collision.pointPolygon(new Point(circle.pos), polygon);
+    };
+
+    static polygonPolygon (polygon1, polygon2) {
+        for(let index = 0; index < polygon1.vertices.length; index++) {
+            let vc = polygon1.vertices[index].pos; // current vertex position
+            let vn = polygon1.vertices[(index + 1) % polygon1.vertices.length].pos; // next vertex position
+            let polygonLine = new Line(vc, vn);
+            if(polygon2.isColliding(polygonLine)) {
+                return true;
+            };
+        };
+        return polygon1.isColliding(polygon2.vertices[0]) || polygon2.isColliding(polygon1.vertices[0]);
     };
 };
 
 // NOTICE
-// Lacks point-point and point-line since those are very niche
-// If I ever need it, I could probably just make a circle at the point's position that has a very small radius
+// Lacks point-point since it is very niche
+// If I ever need it, I could probably just make a circle at one of the point's position that has a very small radius
 class Point {
     constructor (pos, parent) {
         this.type = 'point';
+        this.relativeAngle = 0;
         this.relativePos = pos;
-        this.size = new Vector(1, 1);
+        this.relativeSize = new Vector(1, 1);
         this.parent = parent;
+    };
+    get angle () {
+        if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
+            return this.relativeAngle + parentAngle;
+        } else {
+            return this.relativeAngle;
+        };
+    };
+    set angle (angle) {
+        if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
+            this.relativeAngle = angle - parentAngle;
+        } else {
+            this.relativeAngle = angle;
+        };
+        return this;
     };
     get pos () {
         if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            return this.relativePos.scaleByVector(parentSize).translate(this.parent.pos);
+            return this.relativePos.rotate(parentAngle).scaleByVector(parentSize).translate(this.parent.pos);
         } else {
             return this.relativePos;
         };
     };
     set pos (pos) {
         if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            this.relativePos = pos.subtract(this.parent.pos).scaleByVector(parentSize.invert());
+            this.relativePos = pos.subtract(this.parent.pos).scaleByVector(parentSize.invert()).rotate(0 - parentAngle);
         } else {
             this.relativePos = pos;
         };
@@ -178,17 +334,20 @@ class Point {
     };
     isColliding (other) {
         switch (other.type) {
+            case 'line' : return collision.pointLine(this, other);
             case 'rect' : return collision.pointRect(this, other);
             case 'circle' : return collision.pointCircle(this, other);
+            case 'polygon' : return other.isColliding(this);
+            case 'set' : return other.isColliding(this);
             default : return false;
         };
     };
-    render (cam, radius=5, color='#FFFFFF') {
+    render (cam, width=5, color='#FFFFFF') {
         draw.color = color;
         if(cam) {
-            draw.circleFill(this.pos.worldToScreen(cam), radius);
+            draw.circleFill(this.pos.worldToScreen(cam), width);
         } else {
-            draw.circleFill(this.pos, radius);
+            draw.circleFill(this.pos, width);
         };
     };
 };
@@ -204,16 +363,20 @@ class Line extends Point {
     };
     get endPos () {
         if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            return this.relativeEndPos.scaleByVector(parentSize).translate(this.parent.pos);
+            return this.relativeEndPos.rotate(parentAngle).scaleByVector(parentSize).translate(this.parent.pos);
         } else {
             return this.relativeEndPos;
         };
     };
     set endPos (pos) {
         if(this.parent != undefined) {
+            let parentAngle = this.parent.angle;
+            if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            this.relativeEndPos = pos.subtract(this.parent.pos).scaleByVector(parentSize.invert());
+            this.relativeEndPos = pos.subtract(this.parent.pos).scaleByVector(parentSize.invert()).rotate(0 - parentAngle);
         } else {
             this.relativeEndPos = pos;
         };
@@ -221,8 +384,12 @@ class Line extends Point {
     };
     isColliding (other) {
         switch (other.type) {
+            case 'point' : return collision.pointLine(other, this);
             case 'line' : return collision.lineLine(this, other);
             case 'rect' : return collision.lineRect(this, other);
+            case 'circle' : return collision.lineCircle(this, other);
+            case 'polygon' : return other.isColliding(this);
+            case 'set' : return other.isColliding(this);
             default : return false;
         };
     };
@@ -230,6 +397,7 @@ class Line extends Point {
         switch (other.type) {
             case 'line' : return collision.lineLineIntersection(this, other);
             case 'rect' : return collision.lineRectIntersection(this, other);
+            case 'circle' : return collision.lineCircleIntersection(this, other);
             default : return undefined;
         };
     };
@@ -261,6 +429,8 @@ class Rect extends Point {
             case 'line' : return collision.lineRect(other, this);
             case 'rect' : return collision.rectRect(this, other);
             case 'circle' : return collision.rectCircle(this, other);
+            case 'polygon' : return other.isColliding(this);
+            case 'set' : return other.isColliding(this);
             default : return false;
         };
     };
@@ -290,9 +460,6 @@ class Rect extends Point {
     };
 };
 
-// TO-DO
-// Add proper line-circle instead of just giving the circle a rect and doing a line-rect on that rect
-// Whenever proper line-circle is added, remove "this.rect" since that is all it does
 class Circle extends Point {
     constructor (pos, radius, parent) {
         super(Point);
@@ -300,7 +467,6 @@ class Circle extends Point {
         this.relativePos = pos;
         this.relativeRadius = radius;
         this.parent = parent;
-        this.rect = new Rect(new Vector(), new Vector(1, 1), this);
     };
     get radius () {
         if(this.parent != undefined) {
@@ -330,10 +496,19 @@ class Circle extends Point {
     isColliding (other) {
         switch (other.type) {
             case 'point' : return collision.pointCircle(other, this);
-            case 'line' : return collision.lineRect(other, this.rect);
+            case 'line' : return collision.lineCircle(other, this);
             case 'rect' : return collision.rectCircle(other, this);
             case 'circle' : return collision.circleCircle(this, other);
+            case 'polygon' : return other.isColliding(this);
+            case 'set' : return other.isColliding(this);
             default : return false;
+        };
+    };
+    getIntersection (other) {
+        switch (other.type) {
+            case 'line' : return collision.lineCircleIntersection(other, this);
+            case 'circle' : return collision.circleCircleIntersection(this, other);
+            default : return undefined;
         };
     };
     render (cam, width=5, color='#FFFFFF') {
@@ -343,6 +518,69 @@ class Circle extends Point {
             draw.circleStroke(this.pos.worldToScreen(cam), this.radius * cam.zoom);
         } else {
             draw.circleStroke(this.pos, this.radius * cam.zoom);
+        };
+    };
+};
+
+class Polygon extends Point {
+    constructor (pos, vertices, parent) {
+        super(Point);
+        this.type = 'polygon';
+        this.relativePos = pos;
+        this.vertices = vertices || [];
+        this.parent = parent;
+        for(let index in this.vertices) {
+            this.vertices[index].parent = this;
+        };
+    };
+    isColliding (other) {
+        switch (other.type) {
+            case 'point' : return collision.pointPolygon(other, this);
+            case 'line' : return collision.linePolygon(other, this);
+            case 'rect' : return collision.rectPolygon(other, this);
+            case 'circle' : return collision.circlePolygon(other, this);
+            case 'polygon' : return collision.polygonPolygon(this, other);
+            case 'set' : return other.isColliding(this);
+            default : return false;
+        };
+    };
+    render (cam, width=5, color='#FFFFFF', cap=true) {
+        draw.width = width;
+        draw.color = color;
+        for(let index = 0; index < this.vertices.length; index++) {
+            let vc = this.vertices[index].pos; // current vertex position
+            let vn = this.vertices[(index + 1) % this.vertices.length].pos; // next vertex position
+            if(cam) {
+                draw.lineStroke(vc.worldToScreen(cam), vn.worldToScreen(cam), cap);
+            } else {
+                draw.lineStroke(vc, vn, cap);
+            };
+        };
+    };
+};
+
+class ColliderSet extends Point {
+    constructor (pos, colliders, parent) {
+        super(Point);
+        this.type = 'set';
+        this.relativePos = pos;
+        this.colliders = colliders || [];
+        this.parent = parent;
+        for(let index in this.colliders) {
+            this.colliders[index].parent = this;
+        };
+    };
+    isColliding (other) {
+        for(let collider of this.colliders) {
+            if(collider.isColliding(other)) {
+                return true;
+            };
+        };
+        return false;
+    };
+    render (cam, width=5, color='#FFFFFF', cap) {
+        for(let collider of this.colliders) {
+            collider.render(cam, width, color, cap);
         };
     };
 };

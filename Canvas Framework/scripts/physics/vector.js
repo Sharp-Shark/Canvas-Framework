@@ -41,7 +41,7 @@ class Vector {
         return this;
     };
     getDistTo (vector) {
-        return this.translate(vector.reflect()).scaler
+        return this.translate(vector.reflect()).scaler;
     };
     lerp (vector, scaler) {
         return new Vector(Math.lerp(this.x, vector.x, scaler), Math.lerp(this.y, vector.y, scaler));

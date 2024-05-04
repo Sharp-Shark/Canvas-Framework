@@ -20,6 +20,7 @@ class Entity {
     render (cam) {
         draw.color = 'rgba(155, 155, 155, 0.8)';
         draw.circleFill(this.pos.worldToScreen(cam), this.radius * cam.zoom);
+        if(drawColliders) {this.collider.render(cam, 10 * cam.zoom, '#FF00FF');};
     };
     onCollision (delta, entity, other) {
     };
@@ -70,12 +71,11 @@ class PhysEntity extends Entity {
         for(let entity of entities) {
             if(this.physicsType < 2) {break;};
             if(entity != this) {
-                //if(this.pos.translate(entity.pos.reflect()).scaler < (this.radius + entity.radius)) {
                 if(this.collider.isColliding(entity.collider)) {
                     if(entity.physicsType == 1) {
                         // Velocity
                         let vel = this.vel.scaler;
-                        this.vel = new Vector(0, 0).moveTowards(this.pos.subtract(entity.pos), vel);
+                        this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos), vel);
                         // Position
                         let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
                         this.pos = this.pos.translatePolar(overlap, this.pos.subtract(entity.pos).angle);
@@ -84,8 +84,8 @@ class PhysEntity extends Entity {
                     } else {
                         // Velocity
                         let vel = this.vel.scaler * this.mass + entity.vel.scaler * entity.mass;
-                        this.vel = new Vector(0, 0).moveTowards(this.pos.subtract(entity.pos), vel / this.mass / 2);
-                        entity.vel = new Vector(0, 0).moveTowards(this.pos.subtract(entity.pos), vel / entity.mass / -2);
+                        this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(entity.pos), vel / this.mass / 2);
+                        entity.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(this.pos), vel / entity.mass / -2);
                         // Position
                         let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
                         let oldPos = this.pos;

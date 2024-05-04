@@ -17,6 +17,7 @@ class Camera extends PhysEntity {
         let move = new Vector(input.getBindState('moveRight') - input.getBindState('moveLeft'), input.getBindState('moveUp') - input.getBindState('moveDown'));
         move.angle = move.rotate(0 - this.angle).angle;
         move.scaler = (1/10) / this.zoom * delta;
+        if(this.target != undefined) {move = new Vector();};
 
         this.vel = this.vel.translate(move);
         this.angleVel += (1/3000) * (input.getBindState('rotateClock') - input.getBindState('rotateCounter')) * delta;
