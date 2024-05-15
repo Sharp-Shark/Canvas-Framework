@@ -10,6 +10,24 @@ function invLerp (n, min=0, max=1) {
     return (n-min)/(max-min);
 };
 
+// range [0, 2*Math.PI[
+function limitAngle (angle) {
+    return (angle < 0 ? Math.PI - angle : angle) % (Math.PI * 2);
+};
+
+function triangleIK (length1, length2, target, direction) {
+    // length1 is the length of the first line segment
+    // length2 is the length of the second line segment
+    let distance = Math.min(target.scaler, length1 + length2);
+    let cosine = (length1**2 + length2**2 - distance**2) / (2 * length1 * length2) // a² = b² + c² - 2 * b * c * cos(x)
+    let angle = Math.PI/2 - Math.acos(cosine) / 2;
+    let midpoint = new Vector(length1);
+    // direction defines which way the midpoint bends
+    midpoint = midpoint.rotate(target.angle + angle * direction);
+    // to calculate endpoint do "midpoint.moveTowards(target, length2)"
+    return midpoint;
+};
+
 function resizeCanvas () {
     screen.width = document.documentElement.clientWidth - 4;
     screen.height = document.documentElement.clientHeight - 4;
@@ -21,7 +39,7 @@ let useQuadtree = true;
 let useCulling = true;
 
 // Debugging
-let drawCollisionBlocks = false;
+let drawQuadtree = false;
 let drawColliders = true;
 
 // Define entityManager
@@ -61,11 +79,36 @@ let delta = 0;
 let deltaMultiplier = 1;
 
 // remove this later
-let line1 = new Line(new Vector(2000, 0), new Vector(1000, 1000));
+let line1 = new Line(new Vector(3000, 0), new Vector(1500, 1500));
 let circle1 = new Circle(new Vector(), 500);
 let player = new PhysEntity(new Vector(), 100);
 player.friction = 0.95;
 entityManager.initEntity(player);
+
+// remove this later
+let silly = false;
+
+let entityX
+// line 1
+entityX = new Entity(new Vector(), 0);
+entityManager.initEntity(entityX);
+entityX.collider = new Line(new Vector(1200, 800), new Vector(2800, -800), entityX);
+// line 2
+entityX = new Entity(new Vector(), 0);
+entityManager.initEntity(entityX);
+entityX.collider = new Line(new Vector(-1200, -800), new Vector(-2800, 800), entityX);
+// line 3
+entityX = new Entity(new Vector(), 0);
+entityManager.initEntity(entityX);
+entityX.collider = new Line(new Vector(-1200, -800), new Vector(-800, -2400), entityX);
+// line 4
+entityX = new Entity(new Vector(), 0);
+entityManager.initEntity(entityX);
+entityX.collider = new Line(new Vector(-800, -2400), new Vector(0, -4000), entityX);
+// line 5
+entityX = new Entity(new Vector(), 0);
+entityManager.initEntity(entityX);
+entityX.collider = new Line(new Vector(1200, 800), new Vector(400, 800), entityX);
 
 // Main function
 function main (time) {
@@ -81,7 +124,11 @@ function main (time) {
     delta = time - previousTime;
     delta = delta * deltaMultiplier;
     previousTime = time;
+
+    // clear screen
     ctx.clearRect(0, 0, screen.width, screen.height);
+    // disable anti-aliasing for pixelated look on lowres images
+    ctx.imageSmoothingEnabled = false;
 
     cam.update();
     
@@ -92,24 +139,45 @@ function main (time) {
     };
     entityManager.renderEntities(cam);
 
-    if(drawCollisionBlocks) {
+    if(drawQuadtree) {
         entityManager.collisionBlock.render(cam);
     };
 
-    // remove this later
+    // player movement
     cam.target = player;
     let playerMove = new Vector(input.getBindState('moveRight') - input.getBindState('moveLeft'), input.getBindState('moveUp') - input.getBindState('moveDown'));
     playerMove.angle = playerMove.rotate(0 - cam.angle).angle;
     playerMove.scaler = (1/10) * delta;
     player.vel = player.vel.translate(playerMove);
+    // trig setup
+    let O = player.pos;
+    let M = triangleIK(500, 500, input.mouse.worldPos.subtract(player.pos), input.mouse.worldPos.x > player.pos.x ? 1 : -1).translate(player.pos);
+    let T = M.moveTowards(input.mouse.worldPos, 500);
+    // trig render
+    draw.width = 50 * cam.zoom;
+    draw.color = '#FF00FF';
+    draw.lineStroke(O.worldToScreen(cam), M.worldToScreen(cam), true);
+    draw.lineStroke(M.worldToScreen(cam), T.worldToScreen(cam), true);
+    // player render
     draw.drawImage('barodev', player.pos.worldToScreen(cam), player.collider.size.scale(cam.zoom));
-    // remove this later
+    // collision test
     circle1.pos = input.mouse.worldPos;
     circle1.render(cam, 5 * cam.zoom);
     line1.render(cam, 5 * cam.zoom);
     if(circle1.isColliding(line1)) {
         let point = new Point(collision.lineCircleIntersection(line1, circle1));
         point.render(cam, 15 * cam.zoom, '#FF00FF');
+    };
+    
+    // silly static object creation
+    if(input.mouse.down && silly) {
+        silly = false;
+        let radius = 50;
+        let entity = new PhysEntity(player.pos.moveTowards(input.mouse.worldPos, player.radius + radius + 1), radius);
+        entityManager.initEntity(entity);
+        entity.vel = input.mouse.worldPos.subtract(player.pos).setScaler(5);
+    } else {
+        silly = !input.mouse.down;
     };
 
     // Edge
@@ -121,9 +189,11 @@ function main (time) {
     draw.lineStroke(pos.translate(edge.scale(0.5).reflect()).worldToScreen(cam), pos.translate(edge.scale(0.5).flipY()).worldToScreen(cam), true);
     draw.lineStroke(pos.translate(edge.scale(0.5).flipY()).worldToScreen(cam), pos.translate(edge.scale(0.5)).worldToScreen(cam), true);
 
+    // Cursor
     draw.color = 'white';
     draw.circleFill(input.mouse.pos, 5);
 
+    // Text
     let spacing = 1;
     draw.color = 'white';
     draw.fillText('Press [H] for Help.', 24, 'left', new Vector(10, 30 * spacing)); spacing++;
@@ -136,8 +206,6 @@ function main (time) {
     frame++;
     if(!noLoop) {requestAnimationFrame(main);};
 };
-
-requestAnimationFrame(main);
 
 input.onBindDown['togglePause'] = function () {
     paused = !paused;
@@ -201,3 +269,5 @@ window.addEventListener("visibilitychange", (event) => {
         requestAnimationFrame(main);
     };
 });
+
+requestAnimationFrame(main);

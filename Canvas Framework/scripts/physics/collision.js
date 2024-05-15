@@ -63,7 +63,7 @@ class collision {
         };
     };
 
-    static lineRect (line, rect) {
+    static lineRect (line, rect, fast=false) {
         let topLeft = rect.getRelative(new Vector(-1, 1));
         let topRight = rect.getRelative(new Vector(1, 1));
         let bottomRight = rect.getRelative(new Vector(1, -1));
@@ -73,8 +73,10 @@ class collision {
         if(collision.lineLine(line, new Line(topRight, bottomRight))) {return true};
         if(collision.lineLine(line, new Line(bottomRight, bottomLeft))) {return true};
         if(collision.lineLine(line, new Line(bottomLeft, topLeft))) {return true};
-        if(collision.pointRect(new Point(line.pos), rect)) {return true};
-        if(collision.pointRect(new Point(line.endPos), rect)) {return true};
+        if(!fast) {
+            if(collision.pointRect(new Point(line.pos), rect)) {return true};
+            if(collision.pointRect(new Point(line.endPos), rect)) {return true};
+        };
         return false;
     };
 
@@ -156,12 +158,10 @@ class collision {
         if(line.isColliding(point)) {
             return point.pos;
         };
-
+        
         let bool1 = circle.isColliding(new Point(line.pos));
         let bool2 = circle.isColliding(new Point(line.endPos));
-        if(bool1 && bool2) {
-            return line.pos;
-        } else if(bool1 && !bool2) {
+        if(bool1) {
             return line.pos;
         } else if(bool2) {
             return line.endPos;

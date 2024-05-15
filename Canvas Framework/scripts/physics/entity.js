@@ -73,26 +73,35 @@ class PhysEntity extends Entity {
             if(entity != this) {
                 if(this.collider.isColliding(entity.collider)) {
                     if(entity.physicsType == 1) {
-                        // Velocity
-                        let vel = this.vel.scaler;
-                        this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos), vel);
-                        // Position
-                        let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
-                        this.pos = this.pos.translatePolar(overlap, this.pos.subtract(entity.pos).angle);
-                        this.onCollision(delta, entity, this);
-                        entity.onCollision(delta, this, entity);
+                        if(entity.collider.type == 'line') {
+                            let intersectionPos = this.collider.getIntersection(entity.collider);
+                            this.pos = this.pos.translatePolar(this.radius - intersectionPos.subtract(this.pos).scaler,  this.pos.subtract(intersectionPos).angle);
+                            let normal = entity.collider.pos.subtract(entity.collider.endPos).rotate(Math.PI / 2).setScaler(1);
+                            this.vel = this.vel.subtract(normal.scale(this.vel.dotProduct(normal) * 2));
+                        } else if(entity.collider.type == 'circle') {
+                            // Velocity
+                            let vel = this.vel.scaler;
+                            this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos), vel);
+                            // Position
+                            let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
+                            this.pos = this.pos.translatePolar(overlap, this.pos.subtract(entity.pos).angle);
+                            this.onCollision(delta, entity, this);
+                            entity.onCollision(delta, this, entity);
+                        };
                     } else {
-                        // Velocity
-                        let vel = this.vel.scaler * this.mass + entity.vel.scaler * entity.mass;
-                        this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(entity.pos), vel / this.mass / 2);
-                        entity.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(this.pos), vel / entity.mass / -2);
-                        // Position
-                        let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
-                        let oldPos = this.pos;
-                        this.pos = this.pos.translatePolar(overlap / 2, this.pos.subtract(entity.pos).angle);
-                        entity.pos = entity.pos.translatePolar(overlap / -2, oldPos.subtract(entity.pos).angle);
-                        this.onCollision(delta, entity, this);
-                        entity.onCollision(delta, this, entity);
+                        if(entity.collider.type == 'circle') {
+                            // Velocity
+                            let vel = this.vel.scaler * this.mass + entity.vel.scaler * entity.mass;
+                            this.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(entity.pos), vel / this.mass / 2);
+                            entity.vel = new Vector().moveTowards(this.pos.subtract(entity.pos).subtract(this.pos), vel / entity.mass / -2);
+                            // Position
+                            let overlap = (this.radius + entity.radius) - this.pos.translate(entity.pos.reflect()).scaler;
+                            let oldPos = this.pos;
+                            this.pos = this.pos.translatePolar(overlap / 2, this.pos.subtract(entity.pos).angle);
+                            entity.pos = entity.pos.translatePolar(overlap / -2, oldPos.subtract(entity.pos).angle);
+                            this.onCollision(delta, entity, this);
+                            entity.onCollision(delta, this, entity);
+                        };
                     };
                 };
             };
@@ -160,7 +169,8 @@ class CollisionBlock {
         for(let entity of entitiesToCheck) {
             if(entity.physicsType == 0) {continue;};
             if(entity.pos == undefined) {continue;};
-            if(collision.pointRect(entity, this.collider)) {
+            //if(collision.pointRect(entity, this.collider)) {
+            if(this.collider.isColliding(entity.collider)) {
                 this.entities.push(entity);
             };
         };

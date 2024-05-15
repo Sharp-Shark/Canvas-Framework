@@ -11,7 +11,8 @@ class input {
         'zoomIn': 'q', // increase camera zoom level (+)
         'zoomOut': 'e', // decrease camera zoom level (-)
         'help': 'h', // gets list of keybinds
-        'togglePause': 'space' // toggle pause
+        'togglePause': 'space', // toggle pause
+        '': ''
     };
     static onBindDown = {};
     static onBindUp = {};
