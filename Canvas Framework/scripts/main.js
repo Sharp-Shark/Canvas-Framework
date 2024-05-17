@@ -18,9 +18,8 @@ function limitAngle (angle) {
 function triangleIK (length1, length2, target, direction) {
     // length1 is the length of the first line segment
     // length2 is the length of the second line segment
-    let distance = Math.min(target.scaler, length1 + length2);
-    let cosine = (length1**2 + length2**2 - distance**2) / (2 * length1 * length2) // a² = b² + c² - 2 * b * c * cos(x)
-    let angle = Math.PI/2 - Math.acos(cosine) / 2;
+    let distance = Math.max(Math.min(target.scaler, length1 + length2), Math.abs(length1 - length2));
+    let angle = Math.acos((length1**2 + distance**2 - length2**2) / (2 * length1 * distance)) // a² = b² + c² - 2 * b * c * cos(x)
     let midpoint = new Vector(length1);
     // direction defines which way the midpoint bends
     midpoint = midpoint.rotate(target.angle + angle * direction);
@@ -79,11 +78,11 @@ let delta = 0;
 let deltaMultiplier = 1;
 
 // remove this later
-let line1 = new Line(new Vector(3000, 0), new Vector(1500, 1500));
-let circle1 = new Circle(new Vector(), 500);
 let player = new PhysEntity(new Vector(), 100);
 player.friction = 0.95;
 entityManager.initEntity(player);
+let length1 = 500;
+let length2 = 500;
 
 // remove this later
 let silly = false;
@@ -109,6 +108,8 @@ entityX.collider = new Line(new Vector(-800, -2400), new Vector(0, -4000), entit
 entityX = new Entity(new Vector(), 0);
 entityManager.initEntity(entityX);
 entityX.collider = new Line(new Vector(1200, 800), new Vector(400, 800), entityX);
+
+let direction = 1;
 
 // Main function
 function main (time) {
@@ -151,23 +152,32 @@ function main (time) {
     player.vel = player.vel.translate(playerMove);
     // trig setup
     let O = player.pos;
-    let M = triangleIK(500, 500, input.mouse.worldPos.subtract(player.pos), input.mouse.worldPos.x > player.pos.x ? 1 : -1).translate(player.pos);
-    let T = M.moveTowards(input.mouse.worldPos, 500);
+    if(input.mouse.worldPos.x > player.pos.x) {
+        direction = direction + (1/100) * delta;
+        direction = Math.min(direction, 1);
+    } else {
+        direction = direction - (1/100) * delta;
+        direction = Math.max(direction, -1);
+    };
+    let M = triangleIK(length1, length2, input.mouse.worldPos.subtract(player.pos), direction).translate(player.pos);
+    let T = M.moveTowards(input.mouse.worldPos, length2);
     // trig render
     draw.width = 50 * cam.zoom;
     draw.color = '#FF00FF';
     draw.lineStroke(O.worldToScreen(cam), M.worldToScreen(cam), true);
     draw.lineStroke(M.worldToScreen(cam), T.worldToScreen(cam), true);
+    // raycast
+    let raycast = new Line(O, T);
+    raycast.render(cam, 5 * cam.zoom);
+    for(let entity of entityManager.entities) {
+        if(entity != player && entity.collider.isColliding(raycast)) {
+            let intersectionPos = raycast.getIntersection(entity.collider, true);
+            let point = new Point(intersectionPos);
+            point.render(cam, 15 * cam.zoom, '#00FFFF');
+        };
+    };
     // player render
     draw.drawImage('barodev', player.pos.worldToScreen(cam), player.collider.size.scale(cam.zoom));
-    // collision test
-    circle1.pos = input.mouse.worldPos;
-    circle1.render(cam, 5 * cam.zoom);
-    line1.render(cam, 5 * cam.zoom);
-    if(circle1.isColliding(line1)) {
-        let point = new Point(collision.lineCircleIntersection(line1, circle1));
-        point.render(cam, 15 * cam.zoom, '#FF00FF');
-    };
     
     // silly static object creation
     if(input.mouse.down && silly) {

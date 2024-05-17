@@ -143,7 +143,7 @@ class collision {
         return line.isColliding(point) && circle.isColliding(point);
     };
 
-    static lineCircleIntersection (line, circle) {
+    static lineCircleIntersection (line, circle, raycast=false) {
         // Line-circle collision taken from "https://www.jeffreythompson.org/collision-detection/line-circle.php"
         let x1 = line.pos.x;
         let x2 = line.endPos.x;
@@ -155,7 +155,12 @@ class collision {
         let len = line.pos.getDistTo(line.endPos);
         let dot = ( ((cx-x1)*(x2-x1)) + ((cy-y1)*(y2-y1)) ) / (len ** 2);
         let point = new Point(new Vector(x1 + (dot * (x2-x1)), y1 + (dot * (y2-y1))));
-        if(line.isColliding(point)) {
+        if(line.isColliding(point) || raycast) {
+            // this raycast part is not in the Jeffrey Thompson example. My idea with it is to move the intersection point towards the line origin by value
+            if(raycast) {
+                let value = (circle.radius**2 - circle.pos.getDistTo(point.pos)**2)**0.5; // my pythagorean magic
+                point.pos = point.pos.moveTowardsClamped(line.pos, value);
+            };
             return point.pos;
         };
         
@@ -382,22 +387,22 @@ class Line extends Point {
         };
         return this;
     };
-    isColliding (other) {
+    isColliding (other, fast=false) {
         switch (other.type) {
             case 'point' : return collision.pointLine(other, this);
             case 'line' : return collision.lineLine(this, other);
-            case 'rect' : return collision.lineRect(this, other);
+            case 'rect' : return collision.lineRect(this, other, fast);
             case 'circle' : return collision.lineCircle(this, other);
             case 'polygon' : return other.isColliding(this);
             case 'set' : return other.isColliding(this);
             default : return false;
         };
     };
-    getIntersection (other) {
+    getIntersection (other, raycast=false) {
         switch (other.type) {
             case 'line' : return collision.lineLineIntersection(this, other);
             case 'rect' : return collision.lineRectIntersection(this, other);
-            case 'circle' : return collision.lineCircleIntersection(this, other);
+            case 'circle' : return collision.lineCircleIntersection(this, other, raycast);
             default : return undefined;
         };
     };
@@ -423,10 +428,10 @@ class Rect extends Point {
     getRelative (vector) {
         return this.pos.translate(this.size.scaleByVector(vector).scale(0.5));
     };
-    isColliding (other) {
+    isColliding (other, fast=false) {
         switch (other.type) {
             case 'point' : return collision.pointRect(other, this);
-            case 'line' : return collision.lineRect(other, this);
+            case 'line' : return collision.lineRect(other, this, fast);
             case 'rect' : return collision.rectRect(this, other);
             case 'circle' : return collision.rectCircle(this, other);
             case 'polygon' : return other.isColliding(this);

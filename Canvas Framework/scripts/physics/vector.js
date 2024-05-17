@@ -81,11 +81,11 @@ class Vector {
     dotProduct (vector) {
         return this.scaler * vector.scaler * Math.cos(this.angle - vector.angle);
     };
-    moveTowardsClamped (vector, scaler) {
-        return this.translate(vector.translate(this.reflect()).setScaler(scaler).clamp(this.getDistTo(vector)));
-    };
     moveTowards (vector, scaler) {
         return this.translate(vector.translate(this.reflect()).setScaler(scaler));
+    };
+    moveTowardsClamped (vector, scaler) {
+        return this.moveTowards(vector, Math.min(scaler, this.getDistTo(vector)));
     };
     worldToScreen (cam) {
         return this.translate(cam.pos.reflect()).rotate(cam.angle).scale(cam.zoom).flipY().translate(new Vector(screen.width/2, screen.height/2));

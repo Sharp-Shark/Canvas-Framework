@@ -216,9 +216,6 @@ class EntityManager {
     updateEntities () {
         // Apply delete queue
         for(let entity of this.deleteQueue) {
-            if(entity == selected) {
-                selected = undefined;
-            };
             if(entity == cam.target) {
                 cam.target = undefined;
             };
