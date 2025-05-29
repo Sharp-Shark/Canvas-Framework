@@ -17,60 +17,60 @@ class Vector {
         return Math.atan2(this.y, this.x);
     };
     set angle (angle) {
-        this.set(this.rotate(angle - this.angle));
+        this.setAngle(angle);
         return this;
     };
     setAngle (angle) {
-        this.angle = angle;
+        this.set(this.rotate(angle - this.angle));
         return this;
     };
     get scaler () {
         return Math.sqrt(this.x**2 + this.y**2);
     }
     set scaler (scaler) {
+        this.setScaler(scaler);
+        return this;
+    };
+    setScaler (scaler) {
         if(this.scaler == 0) {return this;};
         this.set(this.scale(scaler / this.scaler));
         return this;
     };
-    setScaler (scaler) {
-        this.scaler = scaler;
-        return this;
-    };
     clamp (scaler) {
-        if(this.scaler > scaler) {this.scaler = scaler};
+        if(this.scaler > scaler) {this.setScaler(scaler)};
         return this;
     };
     getDistTo (vector) {
-        return this.translate(vector.reflect()).scaler;
+        return this.subtract(vector).scaler;
     };
     lerp (vector, scaler) {
         return new Vector(Math.lerp(this.x, vector.x, scaler), Math.lerp(this.y, vector.y, scaler));
     };
     flipX () {
-        return new Vector(0-this.x, this.y);
+        return new Vector(-this.x, this.y);
     };
     flipY () {
-        return new Vector(this.x, 0-this.y);
+        return new Vector(this.x, -this.y);
     };
     reflect () {
-        return this.scale(-1);
+        return new Vector(-this.x, -this.y);
     };
     invert () {
         return new Vector(1 / this.x, 1 / this.y);
     };
     translate (vector) {
-        return new Vector(this.x + vector.x, this.y + vector.y)
+        return new Vector(this.x + vector.x, this.y + vector.y);
     };
     subtract (vector) {
-        return this.translate(vector.reflect());
+        return new Vector(this.x - vector.x, this.y - vector.y);
     };
     translatePolar (scaler, angle) {
         return this.translate(new Vector(scaler, 0).rotate(angle));
     };
     rotate (angle) {
-        let scaler = this.scaler;
-        let a = this.angle;
-        return new Vector(Math.cos(a + angle) * scaler, Math.sin(a + angle) * scaler);
+        let cosAngle = Math.cos(angle);
+        let sinAngle = Math.sin(angle);
+        return new Vector(this.x * cosAngle - this.y * sinAngle, this.y * cosAngle + this.x * sinAngle)
     };
     scale (scaler) {
         return new Vector(this.x * scaler, this.y * scaler);
@@ -79,18 +79,18 @@ class Vector {
         return new Vector(this.x * vector.x, this.y * vector.y);
     };
     dotProduct (vector) {
-        return this.scaler * vector.scaler * Math.cos(this.angle - vector.angle);
+        return this.x * vector.x + this.y * vector.y;
     };
     moveTowards (vector, scaler) {
-        return this.translate(vector.translate(this.reflect()).setScaler(scaler));
+        return this.translate(vector.subtract(this).setScaler(scaler));
     };
     moveTowardsClamped (vector, scaler) {
         return this.moveTowards(vector, Math.min(scaler, this.getDistTo(vector)));
     };
     worldToScreen (cam) {
-        return this.translate(cam.pos.reflect()).rotate(cam.angle).scale(cam.zoom).flipY().translate(new Vector(screen.width/2, screen.height/2));
+        return this.subtract(cam.pos).rotate(cam.angle).scale(cam.zoom).flipY().translate(new Vector(screen.width / 2, screen.height / 2));
     };
     screenToWorld (cam) {
-        return this.translate(new Vector(screen.width/-2, screen.height/-2)).flipY().scale(1/cam.zoom).rotate(0-cam.angle).translate(cam.pos);
+        return this.subtract(new Vector(screen.width / 2, screen.height / 2)).flipY().scale(1 / cam.zoom).rotate(0 - cam.angle).translate(cam.pos);
     };
 };

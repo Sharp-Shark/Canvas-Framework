@@ -9,9 +9,14 @@ class Camera extends PhysEntity {
         this.zoomVel = 0;
         this.target = undefined;
         this.collider = new Rect(new Vector(), new Vector(1, 1), this);
+
+        this.kx = 1;
+        this.ky = 1;
     };
     get size () {
-        return new Vector(screen.width / this.zoom, screen.height / this.zoom);
+        let width = Math.abs(screen.width * Math.cos(this.angle)) + Math.abs(screen.height * Math.sin(this.angle));
+        let height = Math.abs(screen.height * Math.cos(this.angle)) + Math.abs(screen.width * Math.sin(this.angle));
+        return new Vector(width / this.zoom, height / this.zoom);
     };
     updatePhysics () {
         let move = new Vector(input.getBindState('moveRight') - input.getBindState('moveLeft'), input.getBindState('moveUp') - input.getBindState('moveDown'));
@@ -46,6 +51,6 @@ class Camera extends PhysEntity {
     };
     render (name) {
         this.collider.render(cam, 10 * cam.zoom / this.zoom, '#FF00FF');
-        draw.fillText(name, 24 * cam.zoom / this.zoom, 'left', this.collider.getRelative(new Vector(-1, 1)).translate(new Vector(0, 10 / this.zoom)).worldToScreen(cam));
+        draw.fillText(name, 48 * cam.zoom / this.zoom, 'left', this.collider.getRelative(new Vector(-1, 1)).translate(new Vector(0, 20 / this.zoom)).worldToScreen(cam), -cam.angle);
     };
 };

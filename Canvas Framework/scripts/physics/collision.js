@@ -55,8 +55,8 @@ class collision {
     };
 
     static pointRect (point, rect) {
-        if(Math.abs(rect.pos.x - point.pos.x) < rect.size.x/2 &&
-        Math.abs(rect.pos.y - point.pos.y) < rect.size.y/2) {
+        if(Math.abs(rect.pos.x - point.pos.x) < rect.size.x / 2 &&
+        Math.abs(rect.pos.y - point.pos.y) < rect.size.y / 2) {
             return true;
         } else {
             return false;

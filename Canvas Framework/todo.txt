@@ -1,0 +1,7 @@
+separate logic/physics from rendering
+put logic/physics on a setinterval
+put rendering on a requestAnimationFrame
+
+fix collision (specifically circle collision). Will envolve finding the tangent or the normal of the collision
+
+try to unify collision logic for all the diferente shapes using tangent and normal?

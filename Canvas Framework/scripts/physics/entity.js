@@ -1,5 +1,6 @@
 class Entity {
     constructor (pos, radius) {
+        this.ID = entityManager.getNewID();
         this.type = 'Entity';
         this.pos = pos;
         this.vel = new Vector();
@@ -114,7 +115,7 @@ class PhysEntity extends Entity {
 // Quadtree
 class CollisionBlock {
     static entityCap = 3;
-    static minimunSizeScaler = 50;s
+    static minimunSizeScaler = 500;
     constructor (pos, size, parent, corner) {
         this.parent = parent;
         this.corner = corner;
@@ -203,14 +204,23 @@ class CollisionBlock {
 };
 
 class EntityManager {
+    highestID = 0;
+    freeIDs = [];
     initQueue = [];
     deleteQueue = [];
     entities = [];
     collisionBlock = new CollisionBlock(new Vector(), new Vector(1600, 800));
+    getNewID () {
+        if (this.freeIDs.length > 0) {
+            return this.freeIDs.shift();
+        };
+        return this.highestID++;
+    };
     initEntity (entity) {
         this.initQueue.push(entity);
     };
     deleteEntity (entity) {
+        this.freeIDs.push(entity.ID);
         this.deleteQueue.push(entity);
     };
     updateEntities () {
