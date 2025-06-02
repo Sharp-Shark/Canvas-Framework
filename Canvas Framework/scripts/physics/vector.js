@@ -206,8 +206,8 @@ class Anchor {
     compose (anchor) {
         return new Anchor(
             this.apply(anchor.pos),
-            anchor.size.rotate(anchor.angle).scaleByVector(this.size),
-            this.angle,
+            anchor.size.rotate(anchor.angle).scaleByVector(this.size), // this line is incorrect when the angle of the anchor is not equal to 0
+            this.angle + anchor.angle,
         );
     };
     apply (vector) {
