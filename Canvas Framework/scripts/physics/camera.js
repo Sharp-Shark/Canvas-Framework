@@ -9,9 +9,6 @@ class Camera extends PhysEntity {
         this.zoomVel = 0;
         this.target = undefined;
         this.collider = new Rect(new Vector(), new Vector(1, 1), this);
-
-        this.kx = 1;
-        this.ky = 1;
     };
     get size () {
         let width = Math.abs(screen.width * Math.cos(this.angle)) + Math.abs(screen.height * Math.sin(this.angle));

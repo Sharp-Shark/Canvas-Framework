@@ -222,7 +222,7 @@ class collision {
         return bool;
     };
 
-    static linePolygon (line, polygon) {
+    static linePolygon (line, polygon, fast=false) {
         for(let index = 0; index < polygon.vertices.length; index++) {
             let vc = polygon.vertices[index].pos; // current vertex position
             let vn = polygon.vertices[(index + 1) % polygon.vertices.length].pos; // next vertex position
@@ -230,6 +230,10 @@ class collision {
             if(line.isColliding(polygonLine)) {
                 return true;
             };
+        };
+        if(!fast) {
+            if(this.pointPolygon(new Point(line.pos), polygon)) {return true;};
+            if(this.pointPolygon(new Point(line.endPos), polygon)) {return true;};
         };
         return false;
     };
@@ -265,7 +269,7 @@ class collision {
                 return true;
             };
         };
-        return polygon1.isColliding(polygon2.vertices[0]) || polygon2.isColliding(polygon1.vertices[0]);
+        return collision.pointPolygon(polygon2.vertices[0], polygon1) || collision.pointPolygon(polygon1.vertices[0], polygon2);
     };
 };
 
@@ -304,7 +308,7 @@ class Point {
             let parentAngle = this.parent.angle;
             if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            return this.relativePos.rotate(parentAngle).scaleByVector(parentSize).translate(this.parent.pos);
+            return this.relativePos.scaleByVector(parentSize).rotate(parentAngle).translate(this.parent.pos);
         } else {
             return this.relativePos;
         };
@@ -314,7 +318,7 @@ class Point {
             let parentAngle = this.parent.angle;
             if(parentAngle == undefined) {parentAngle = 0;};
             let parentSize = this.parent.size || new Vector(1, 1);
-            this.relativePos = pos.subtract(this.parent.pos).scaleByVector(parentSize.invert()).rotate(0 - parentAngle);
+            this.relativePos = pos.subtract(this.parent.pos).rotate(0 - parentAngle).scaleByVector(parentSize.invert());
         } else {
             this.relativePos = pos;
         };

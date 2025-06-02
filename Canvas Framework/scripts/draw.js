@@ -76,9 +76,9 @@ class draw {
     };
     static drawImage (name, pos, size, angle=0) {
         ctx.translate(pos.x, pos.y);
-        ctx.rotate(angle);
-        ctx.drawImage(this.images[name], size.x / -2, size.y / -2, size.x, size.y);
         ctx.rotate(-angle);
+        ctx.drawImage(this.images[name], size.x / -2, size.y / -2, size.x, size.y);
+        ctx.rotate(angle);
         ctx.translate(-pos.x, -pos.y);
     };
     static applyFilters () {

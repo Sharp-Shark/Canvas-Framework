@@ -123,7 +123,7 @@ function main (time) {
     cam.target = player;
     if(!paused) {
         let playerMove = new Vector(input.getBindState('moveRight') - input.getBindState('moveLeft'), input.getBindState('moveUp') - input.getBindState('moveDown'));
-        playerMove.angle = playerMove.rotate(0 - cam.angle).angle;
+        playerMove.angle = playerMove.rotate(cam.angle).angle;
         playerMove.scaler = (1/10) * delta;
         player.vel = player.vel.translate(playerMove);
     };
@@ -133,6 +133,7 @@ function main (time) {
     for(let entity of entityManager.entities) {
         if(entity != player && entity.collider.isColliding(raycast)) {
             let intersectionPos = raycast.getIntersection(entity.collider, true);
+            if(intersectionPos == undefined) {continue;};
             let point = new Point(intersectionPos);
             point.render(cam, 15 * cam.zoom, '#00FFFF');
         };
